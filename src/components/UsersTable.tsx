@@ -28,7 +28,14 @@ export function UsersTable({ users }: UsersTableProps) {
 
   const getNextPendingStage = (user: User): StageNumber | null => {
     const stages: StageNumber[] = ['1', '2', '3']
-    return stages.find(stage => user.stages[stage]?.status === 'PENDING') || null
+    
+    // Check stages in sequence
+    for (const stage of stages) {
+      if (user.stages[stage]?.status === 'PENDING') {
+        return stage
+      }
+    }
+    return null
   }
 
   const handleScan = async (data: string) => {
@@ -51,12 +58,13 @@ export function UsersTable({ users }: UsersTableProps) {
       const nextStage = getNextPendingStage(user)
       if (!nextStage) {
         alert('All stages are already completed for this user')
+        setScanning(false)
         return
       }
 
       await updateStageStatus(user.id, nextStage, 'CHECK')
       alert(`Successfully marked Stage ${nextStage} as completed for ${user.name}`)
-      // Don't close the scanner so it can be used for the next stage
+      setScanning(false)
     } catch (error) {
       console.error('Error processing scan:', error)
       alert('Error processing QR code')

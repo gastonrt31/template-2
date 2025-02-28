@@ -55,16 +55,28 @@ export const updateStageStatus = async (
   status: Stage['status']
 ) => {
   try {
+    // First, get the current user data
+    const { data: userData, error: fetchError } = await supabase
+      .from('users')
+      .select('stages')
+      .eq('id', userId)
+      .single()
+
+    if (fetchError) throw fetchError
+
+    // Create updated stages object
+    const updatedStages = {
+      ...userData.stages,
+      [stageNumber]: {
+        status,
+        scan_time: status === 'CHECK' ? new Date().toISOString() : null
+      }
+    }
+
+    // Update with the new stages object
     const { error } = await supabase
       .from('users')
-      .update({
-        stages: {
-          [stageNumber]: {
-            status,
-            scan_time: status === 'CHECK' ? new Date().toISOString() : null
-          }
-        }
-      })
+      .update({ stages: updatedStages })
       .eq('id', userId)
 
     if (error) throw error
